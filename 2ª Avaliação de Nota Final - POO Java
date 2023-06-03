@@ -1,0 +1,133 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class Sexta{
+    private static final String URL = "jdbc:postgresql://localhost:5432/postgres";
+    private static final String USUARIO = "postgres";
+    private static final String SENHA = "1234";
+ 
+    public static Connection conectar() throws SQLException {
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Erro ao carregar o driver JDBC do PostgreSQL: " + e.getMessage());
+        }
+        return DriverManager.getConnection(URL, USUARIO, SENHA);
+    }
+    
+
+
+    public static void criarTabela() {
+        String sql = "CREATE TABLE IF NOT EXISTS pessoas ("
+                + "nome VARCHAR(100) NOT NULL,"
+                + "cpf VARCHAR(11) NOT NULL,"
+                + "profissao VARCHAR(100) NOT NULL,"
+                + "PRIMARY KEY (cpf)"
+                + ")";
+        
+        try (Connection conn = conectar();
+             Statement stmt = conn.createStatement()) {
+            
+            stmt.executeUpdate(sql);
+            System.out.println("Tabela criada com sucesso!");
+            
+        } catch (SQLException e) {
+            System.out.println("Erro ao criar tabela: " + e.getMessage());
+        }
+    }
+    
+    public static void adicionarPessoa(String nome, String cpf, String profissao) {
+        String sql = "INSERT INTO pessoas (nome, cpf, profissao) VALUES (?, ?, ?)";
+        
+        try (Connection conn = conectar();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, nome);
+            pstmt.setString(2, cpf);
+            pstmt.setString(3, profissao);
+            pstmt.executeUpdate();
+            
+            System.out.println("Pessoa adicionada com sucesso!");
+            
+        } catch (SQLException e) {
+            System.out.println("Erro ao adicionar pessoa: " + e.getMessage());
+        }
+    }
+    
+    public static void listarPessoas() {
+        String sql = "SELECT * FROM pessoas";
+        
+        try (Connection conn = conectar();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String nome = rs.getString("nome");
+                String cpf = rs.getString("cpf");
+                String profissao = rs.getString("profissao");
+                
+                System.out.println("Nome: " + nome);
+                System.out.println("CPF: " + cpf);
+                System.out.println("Profissão: " + profissao);
+                System.out.println("------------------------");
+            }
+            
+        } catch (SQLException e) {
+            System.out.println("Erro ao listar pessoas: " + e.getMessage());
+        }
+    }
+    
+    public static void atualizarPessoa(String cpf, String novoNome, String novaProfissao) {
+        String sql = "UPDATE pessoas SET nome = ?, profissao = ? WHERE cpf = ?";
+        
+        try (Connection conn = conectar();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, novoNome);
+            pstmt.setString(2, novaProfissao);
+            pstmt.setString(3, cpf);
+            pstmt.executeUpdate();
+            
+            System.out.println("Pessoa atualizada com sucesso!");
+            
+        } catch (SQLException e) {
+            System.out.println("Erro ao atualizar pessoa: " + e.getMessage());
+        }
+    }
+    
+    public static void excluirPessoa(String cpf) {
+        String sql = "DELETE FROM pessoas WHERE cpf = ?";
+        
+        try (Connection conn = conectar();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, cpf);
+            pstmt.executeUpdate();
+            
+            System.out.println("Pessoa excluída com sucesso!");
+            
+        } catch (SQLException e) {
+            System.out.println("Erro ao excluir pessoa: " + e.getMessage());
+        }
+    }
+    
+    public static void main(String[] args) {
+        criarTabela();
+        
+        adicionarPessoa("João", "12345678901", "Engenheiro");
+        
+        listarPessoas();
+        
+        atualizarPessoa("12345678901", "João Silva", "Desenvolvedor");
+        
+        listarPessoas();
+       
+        excluirPessoa("12345678901");
+        
+        listarPessoas();
+    }
+}
